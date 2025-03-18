@@ -1021,78 +1021,6 @@
         "Timelock"
       ]
     },
-    "E:\\Programming\\ManagedDemocracy\\contracts\\facets\\Test1Facet.sol": {
-      "lastModificationDate": 1742231568413,
-      "contentHash": "b92d678c3e91fcc0448971cfe9201ac2",
-      "sourceName": "contracts/facets/Test1Facet.sol",
-      "solcConfig": {
-        "version": "0.8.28",
-        "settings": {
-          "evmVersion": "paris",
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "Test1Facet"
-      ]
-    },
-    "E:\\Programming\\ManagedDemocracy\\contracts\\facets\\Test2Facet.sol": {
-      "lastModificationDate": 1742231568413,
-      "contentHash": "85306ed20a74443ea9eff35b4023407c",
-      "sourceName": "contracts/facets/Test2Facet.sol",
-      "solcConfig": {
-        "version": "0.8.28",
-        "settings": {
-          "evmVersion": "paris",
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "Test2Facet"
-      ]
-    },
     "E:\\Programming\\ManagedDemocracy\\contracts\\governance\\MyTimelockController.sol": {
       "lastModificationDate": 1742237509231,
       "contentHash": "6c4c5a761789cb70aad199be05a659a6",
@@ -1129,6 +1057,44 @@
       ],
       "artifacts": [
         "MyTimelockController"
+      ]
+    },
+    "E:\\Programming\\ManagedDemocracy\\contracts\\facets\\ModuleToggleFacet.sol": {
+      "lastModificationDate": 1742314090854,
+      "contentHash": "ad6a86557c75c307ff66bb9a6da9f15c",
+      "sourceName": "contracts/facets/ModuleToggleFacet.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../libraries/LibDiamond.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "ModuleToggleFacet"
       ]
     }
   }

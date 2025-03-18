@@ -50,6 +50,28 @@ async function main() {
   const txInit = await erc20.initializeERC20("Managed Democracy", "MDEM", initialSupply, deployer.address);
   await txInit.wait();
   console.log("ERC20Facet initialized successfully");
+
+  // Deploy ModuleToggleFacet
+  const ModuleToggleFacet = await ethers.getContractFactory("ModuleToggleFacet");
+  const moduleToggleFacet = await ModuleToggleFacet.deploy();
+  await moduleToggleFacet.waitForDeployment();
+  const moduleToggleFacetAddress = await moduleToggleFacet.getAddress();
+  console.log("ModuleToggleFacet deployed to:", moduleToggleFacetAddress);
+
+  // Add ModuleToggleFacet to Diamond
+  const toggleSelectors = moduleToggleFacet.interface.fragments
+    .filter((f) => f.type === "function")
+    .map((f) => moduleToggleFacet.interface.getFunction(f.name).selector);
+
+  const toggleCut = [{
+    facetAddress: moduleToggleFacetAddress,
+    action: FacetCutAction.Add,
+    functionSelectors: toggleSelectors,
+  }];
+
+  const toggleTx = await diamondCut.diamondCut(toggleCut, ethers.ZeroAddress, "0x");
+  await toggleTx.wait();
+  console.log("ModuleToggleFacet added to Diamond");
 }
 
 main().catch(console.error);
