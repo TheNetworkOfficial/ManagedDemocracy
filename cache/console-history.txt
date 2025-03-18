@@ -1,0 +1,57 @@
+console.log("Owner Balance:", (await erc20.balanceOf(owner.address)).toString());
+const [owner] = await ethers.getSigners();
+console.log("Total Supply:", (await erc20.totalSupply()).toString());
+console.log("Decimals:", await erc20.decimals());
+console.log("Name:", await erc20.name())console.log("Symbol:", await erc20.symbol());
+const erc20 = await ethers.getContractAt(erc20FacetABI, diamondAddress);
+];
+  "function balanceOf(address) public view returns (uint256)"
+  "function totalSupply() public view returns (uint256)",
+  "function decimals() public view returns (uint8)",
+  "function symbol() public view returns (string memory)",
+  "function name() public view returns (string memory)",
+const erc20FacetABI = [
+const diamondAddress = "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44";
+const [owner] = await ethers.getSigners();
+console.log("Total Supply:", (await erc20.totalSupply()).toString());
+console.log("Decimals:", await erc20.decimals());
+console.log("Name:", await erc20.name()console.log("Symbol:", await erc20.symbol());
+const erc20 = await ethers.getContractAt(erc20FacetABI, diamondAddress);
+];
+  "function balanceOf(address) public view returns (uint256)",
+  "function totalSupply() public view returns (uint256)",
+  "function decimals() public view returns (uint8)",
+  "function symbol() public view returns (string memory)",
+  "function name() public view returns (string memory)",
+const erc20FacetABI = [
+const diamondAddress = "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44";
+console.log("Owner Balance:", (await erc20.balanceOf(owner.address)).toString());
+const [owner] = await ethers.getSigners();
+console.log("Total Supply:", (await erc20.totalSupply()).toString());
+console.log("Decimals:", await erc20.decimals());
+console.log("Name:", await erc20.console.log("Symbol:", await erc20.symbol());
+const erc20 = await ethers.getContractAt(erc20FacetABI, diamondAddress);
+];
+  "function balanceOf(address) public view returns (uint256)",
+  "function totalSupply() public view returns (uint256)",
+  "function decimals() public view returns (uint8)",
+  "function symbol() public view returns (string memory)",
+  "function name() public view returns (string memory)",
+const erc20FacetABI = [
+const diamondAddress = "0x..."; // Update with your new deployment address
+console.log("Owner Balance:", (await erc20.balanceOf(owner.address)).toString());
+const [owner] = await ethers.getSigners();
+// Verify your deployer's balance
+console.log("Total Supply:", (await erc20.totalSupply()).toString());
+console.log("Decimals:", await erc20.decimals());
+console.log("Naconsole.log("Symbol:", await erc20.symbol());
+// Verify Token Details
+const erc20 = await ethers.getContractAt(erc20FacetABI, diamondAddress);
+];
+  "function balanceOf(address) public view returns (uint256)",
+  "function totalSupply() public view returns (uint256)",
+  "function decimals() public view returns (uint8)",
+  "function symbol() public view returns (string memory)",
+  "function name() public view returns (string memory)",
+const erc20FacetABI = [
+const diamondAddress = "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c";
