@@ -30,4 +30,5 @@ contract ModuleToggleFacet {
     function isModuleEnabled(bytes32 module) external view returns (bool) {
         return moduleToggleStorage().moduleEnabled[module];
     }
+
 }

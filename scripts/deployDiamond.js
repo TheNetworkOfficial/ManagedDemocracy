@@ -72,6 +72,28 @@ async function main() {
   const toggleTx = await diamondCut.diamondCut(toggleCut, ethers.ZeroAddress, "0x");
   await toggleTx.wait();
   console.log("ModuleToggleFacet added to Diamond");
+
+  // Deploy BurnOnTransactionFacet
+  const BurnOnTransactionFacet = await ethers.getContractFactory("BurnOnTransactionFacet");
+  const burnFacet = await BurnOnTransactionFacet.deploy();
+  await burnOnTransactionFacet.waitForDeployment();
+  const burnFacetAddress = await burnOnTransactionFacet.getAddress();
+  console.log("BurnOnTransactionFacet deployed to:", burnOnTransactionFacetAddress);
+
+  // Add BurnOnTransactionFacet to Diamond
+  const burnSelectors = burnOnTransactionFacet.interface.fragments
+    .filter((f) => f.type === "function")
+    .map((f) => burnOnTransactionFacet.interface.getFunction(f.name).selector);
+
+  const burnCut = [{
+    facetAddress: burnOnTransactionFacetAddress,
+    action: FacetCutAction.Add,
+    functionSelectors: burnSelectors,
+  }];
+
+  const burnTx = await diamondCut.diamondCut(burnCut, ethers.ZeroAddress, "0x");
+  await burnTx.wait();
+  console.log("BurnOnTransactionFacet added to Diamond");
 }
 
 main().catch(console.error);
