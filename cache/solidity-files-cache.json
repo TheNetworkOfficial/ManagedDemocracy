@@ -1060,8 +1060,8 @@
       ]
     },
     "E:\\Programming\\ManagedDemocracy\\contracts\\facets\\ModuleToggleFacet.sol": {
-      "lastModificationDate": 1742314090854,
-      "contentHash": "ad6a86557c75c307ff66bb9a6da9f15c",
+      "lastModificationDate": 1742396315598,
+      "contentHash": "ccc3c16fa70b2fb8f5db02b6a521837c",
       "sourceName": "contracts/facets/ModuleToggleFacet.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -1095,6 +1095,44 @@
       ],
       "artifacts": [
         "ModuleToggleFacet"
+      ]
+    },
+    "E:\\Programming\\ManagedDemocracy\\contracts\\facets\\BurnOnTransactionFacet.sol": {
+      "lastModificationDate": 1742397684395,
+      "contentHash": "4b31c6b78664909c58c81a250033a00d",
+      "sourceName": "contracts/facets/BurnOnTransactionFacet.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BurnOnTransactionFacet",
+        "IERC20Facet",
+        "IModuleToggleFacet"
       ]
     }
   }
