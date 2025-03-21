@@ -1,14 +1,15 @@
+// ERC20Facet.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { LibDiamond } from "../libraries/LibDiamond.sol";
 
 contract ERC20Facet is ERC20 {
     bool private initialized;
 
     constructor() ERC20("Managed Democracy", "MDEM") {
-        // Constructor is never called by Diamond!
-        initialized = true; // Prevent initialization of standalone deployments
+        initialized = true;
     }
 
     function initializeERC20(string memory _name, string memory _symbol, uint256 _initialSupply, address owner) external {
@@ -30,5 +31,16 @@ contract ERC20Facet is ERC20 {
 
     function symbol() public view override returns (string memory) {
         return _symbolERC20;
+    }
+
+    // Explicit transfer declaration to allow Diamond replacement
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        return super.transfer(recipient, amount);
+    }
+
+    // Add explicit burn method to allow interaction
+    function burn(address from, uint256 amount) external {
+        LibDiamond.enforceIsContractOwner();
+        _burn(from, amount);
     }
 }

@@ -75,30 +75,27 @@ async function main() {
 
   // Deploy BurnOnTransactionFacet
   const BurnOnTransactionFacet = await ethers.getContractFactory("BurnOnTransactionFacet");
-  const burnOnTransactionFacet = await BurnOnTransactionFacet.deploy();
-  await burnOnTransactionFacet.waitForDeployment();
-  const burnOnTransactionFacetAddress = await burnOnTransactionFacet.getAddress();
-  console.log("BurnOnTransactionFacet deployed to:", burnOnTransactionFacetAddress);
-
-  // Replace ERC20Facet transfer function explicitly
-  const transferSelector = ERC20Facet.interface.getFunction("transfer").selector;
-
-  const burnFacetSelectors = [
-    transferSelector,
-    BurnOnTransactionFacet.interface.getFunction("initializeBurnModule").selector
+  const burnFacet = await BurnOnTransactionFacet.deploy();
+  await burnFacet.waitForDeployment();
+  const burnFacetAddress = await burnFacet.getAddress();
+  console.log("BurnOnTransactionFacet deployed to:", burnFacetAddress);
+  
+  // Replace existing ERC20 transfer functionality with BurnOnTransactionFacet transfer
+  const burnSelectors = [
+    BurnOnTransactionFacet.interface.getFunction("transfer").selector
   ];
-
+  
+  // Replace existing ERC20 transfer function
   await diamondCut.diamondCut(
     [{
-      facetAddress: burnOnTransactionFacetAddress,
-      action: FacetCutAction.Replace, // <-- Must use Replace to override existing transfer
-      functionSelectors: burnFacetSelectors,
+      facetAddress: burnFacetAddress,
+      action: FacetCutAction.Replace, // Use Replace here
+      functionSelectors: burnSelectors,
     }],
     ethers.ZeroAddress,
     "0x"
   );
-
-  console.log("BurnOnTransactionFacet added to Diamond, replacing ERC20 transfer");
+  console.log("BurnOnTransactionFacet replaced transfer successfully");
 
 }
 

@@ -7,12 +7,11 @@ interface IModuleToggleFacet {
 
 interface IERC20Facet {
     function burn(address from, uint256 amount) external;
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
 }
 
 contract BurnOnTransactionFacet {
     bytes32 constant MODULE_ID = keccak256("BurnOnTransaction");
-    uint256 public burnPercent; // 100 = 1%, 250 = 2.5%
+    uint256 public burnPercent;
 
     event BurnOnTransactionExecuted(address indexed sender, address indexed recipient, uint256 amountSent, uint256 amountBurned);
 
@@ -21,18 +20,31 @@ contract BurnOnTransactionFacet {
         burnPercent = _burnPercent;
     }
 
-    function transfer(address from, address to, uint256 amount) external returns (bool) {
-        require(isModuleActive(), "BurnOnTransaction inactive");
+    // Must exactly match ERC20Facet's transfer signature!
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        if (isModuleActive()) {
+            uint256 burnAmount = (amount * burnPercent) / 10000;
+            uint256 transferAmount = amount - burnAmount;
 
-        uint256 burnAmount = (amount * burnPercent) / 10000;
-        uint256 transferAmount = amount - burnAmount;
+            IERC20Facet(address(this)).burn(msg.sender, burnAmount);
 
-        IERC20Facet(address(this)).burn(from, burnAmount);
-        IERC20Facet(address(this)).transferFrom(from, to, transferAmount);
+            (bool success, bytes memory data) = address(this).delegatecall(
+                abi.encodeWithSignature("transfer(address,uint256)", recipient, transferAmount)
+            );
 
-        emit BurnOnTransactionExecuted(from, to, transferAmount, burnAmount);
+            require(success, "Transfer failed after burn");
 
-        return true;
+            emit BurnOnTransactionExecuted(msg.sender, recipient, transferAmount, burnAmount);
+            return abi.decode(data, (bool));
+        } else {
+            // Delegatecall to ERC20Facet if inactive
+            (bool success, bytes memory data) = address(this).delegatecall(
+                abi.encodeWithSignature("transfer(address,uint256)", recipient, amount)
+            );
+
+            require(success, "Standard transfer failed");
+            return abi.decode(data, (bool));
+        }
     }
 
     function isModuleActive() internal view returns (bool) {
