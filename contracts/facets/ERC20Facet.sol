@@ -1,4 +1,3 @@
-// ERC20Facet.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
@@ -38,9 +37,8 @@ contract ERC20Facet is ERC20 {
         return super.transfer(recipient, amount);
     }
 
-    // Add explicit burn method to allow interaction
+    // Modified burn method: Removed owner check so that burn can be called via delegatecall.
     function burn(address from, uint256 amount) external {
-        LibDiamond.enforceIsContractOwner();
         _burn(from, amount);
     }
 }
