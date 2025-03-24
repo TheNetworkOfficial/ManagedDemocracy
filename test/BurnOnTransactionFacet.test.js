@@ -33,10 +33,33 @@ describe("BurnOnTransactionFacet Tests", function () {
     expect(await erc20.balanceOf(addr1.address)).to.equal(amount);
   });
 
-  it("should enable BurnOnTransaction module", async () => {
+  it("should enable BurnOnTransaction module and disable default transfer", async () => {
+    // Enable module via ModuleToggleFacet
     const moduleId = ethers.keccak256(ethers.toUtf8Bytes("BurnOnTransaction"));
     await moduleToggleFacet.setModuleState(moduleId, true);
     expect(await moduleToggleFacet.isModuleEnabled(moduleId)).to.be.true;
+
+    // Perform diamondCut Replace: swap ERC20Facet.transfer for BurnOnTransactionFacet.transfer
+    let diamondCut = await ethers.getContractAt("IDiamondCut", diamondAddress);
+    diamondCut = diamondCut.connect(deployer);
+    const FacetCutAction = { Add: 0, Replace: 1, Remove: 2 };
+    const burnFacetAddress = await burnOnTransactionFacet.getAddress();
+    await diamondCut.diamondCut(
+      [{
+        facetAddress: burnFacetAddress,
+        action: FacetCutAction.Replace,
+        functionSelectors: [
+          burnOnTransactionFacet.interface.getFunction("transfer").selector,
+        ],
+      }],
+      ethers.ZeroAddress,
+      "0x"
+    );
+
+    // Now check that the diamond routes transfer calls to BurnOnTransactionFacet
+    const transferSelector = burnOnTransactionFacet.interface.getFunction("transfer").selector;
+    const currentFacetAddress = await diamondLoupe.facetAddress(transferSelector);
+    expect(currentFacetAddress).to.equal(burnFacetAddress, "Default transfer function is still enabled!");
   });
 
   it("should burn tokens during transfer when active", async () => {
