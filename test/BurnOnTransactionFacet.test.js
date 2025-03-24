@@ -40,12 +40,13 @@ describe("BurnOnTransactionFacet Tests", function () {
   });
 
   it("should burn tokens during transfer when active", async () => {
+    // Connect diamondCut contract as owner
     let diamondCut = await ethers.getContractAt("IDiamondCut", diamondAddress);
-    diamondCut = diamondCut.connect(deployer); // ensure owner is calling
+    diamondCut = diamondCut.connect(deployer);
     const FacetCutAction = { Add: 0, Replace: 1, Remove: 2 };
-
+  
+    // Replace the transfer function with the BurnOnTransactionFacet.transfer
     const burnFacetAddress = await burnOnTransactionFacet.getAddress();
-
     await diamondCut.diamondCut(
       [{
         facetAddress: burnFacetAddress,
@@ -57,20 +58,23 @@ describe("BurnOnTransactionFacet Tests", function () {
       ethers.ZeroAddress,
       "0x"
     );
-
+  
+    // Enable the burn module via ModuleToggleFacet
     const moduleId = ethers.keccak256(ethers.toUtf8Bytes("BurnOnTransaction"));
     await moduleToggleFacet.setModuleState(moduleId, true);
-
+    expect(await moduleToggleFacet.isModuleEnabled(moduleId)).to.be.true;
+  
     const amount = ethers.parseUnits("1000", 18);
-    // Assuming burnPercent of 100 means 1% burn:
+    // For burnPercent of 100, we assume a burn rate of 1% → burnAmount = amount/100
     const burnAmount = amount / 100n;
     const receivedAmount = amount - burnAmount;
-
+  
+    // Call transfer using ERC20Facet interface (which now routes to BurnOnTransactionFacet.transfer)
     await erc20.transfer(addr1.address, amount);
-
+  
     const recipientBalance = await erc20.balanceOf(addr1.address);
     expect(recipientBalance).to.equal(receivedAmount);
-
+  
     const totalSupply = await erc20.totalSupply();
     const expectedTotalSupply = ethers.parseUnits("100000000", 18) - burnAmount;
     expect(totalSupply).to.equal(expectedTotalSupply);

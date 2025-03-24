@@ -48,7 +48,7 @@ async function deployManagedDemocracyFixture() {
       facetAddress: erc20FacetAddress,
       action: FacetCutAction.Add,
       functionSelectors: ERC20Facet.interface.fragments
-        .filter((f) => f.type === "function" && f.name !== "transfer")
+        .filter((f) => f.type === "function")
         .map((f) => ERC20Facet.interface.getFunction(f.name).selector),
     }],
     ethers.ZeroAddress, "0x"
