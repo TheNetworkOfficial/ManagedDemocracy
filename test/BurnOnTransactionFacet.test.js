@@ -1,10 +1,11 @@
+// BurnOnTransactionFacet.test.js
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { deployManagedDemocracyFixture } = require("./helpers/fixtures");
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
 describe("BurnOnTransactionFacet Tests", function () {
-  let erc20, moduleToggleFacet, burnOnTransactionFacet, deployer, addr1, diamondAddress;
+  let erc20, moduleToggleFacet, burnOnTransactionFacet, erc20Facet, deployer, addr1, diamondAddress;
 
   before(async () => {
     const fixture = await loadFixture(deployManagedDemocracyFixture);
@@ -14,15 +15,15 @@ describe("BurnOnTransactionFacet Tests", function () {
     erc20 = await ethers.getContractAt("ERC20Facet", diamondAddress);
     moduleToggleFacet = await ethers.getContractAt("ModuleToggleFacet", diamondAddress);
     burnOnTransactionFacet = fixture.burnOnTransactionFacet;
-    
-    // Initialize the burn module (attached via diamondCut earlier)
+  
+    // Call initializeBurnModule only if it has not been initialized yet.
     const burnFacetContract = await ethers.getContractAt("BurnOnTransactionFacet", diamondAddress);
-    await burnFacetContract.initializeBurnModule(100); // 1% burn
+    // Optionally check if already initialized (if your interface exposed a getter)
+    // For now, assume this diamond is fresh.
+    await burnFacetContract.initializeBurnModule(100);
   });
 
   it("diagnostic: should print diamond owner", async () => {
-    // If you have an OwnershipFacet function to query owner, you can use it.
-    // For this example, assume the diamond's constructor already set the owner.
     console.log("Diamond owner should be deployer:", deployer.address);
   });
 
@@ -61,6 +62,7 @@ describe("BurnOnTransactionFacet Tests", function () {
     await moduleToggleFacet.setModuleState(moduleId, true);
 
     const amount = ethers.parseUnits("1000", 18);
+    // Assuming burnPercent of 100 means 1% burn:
     const burnAmount = amount / 100n;
     const receivedAmount = amount - burnAmount;
 

@@ -4,34 +4,34 @@ async function deployManagedDemocracyFixture() {
   const [deployer, addr1] = await ethers.getSigners();
 
   // Deploy DiamondCutFacet
-  const DiamondCutFacet = await ethers.getContractFactory("DiamondCutFacet");
+  const DiamondCutFacet = await ethers.getContractFactory("contracts/facets/DiamondCutFacet.sol:DiamondCutFacet");
   const diamondCutFacet = await DiamondCutFacet.deploy();
   await diamondCutFacet.waitForDeployment();
   const diamondCutFacetAddress = await diamondCutFacet.getAddress();
 
-  // Deploy ERC20Facet
-  const ERC20Facet = await ethers.getContractFactory("ERC20Facet");
+  // Deploy ERC20Facet (using fully qualified name)
+  const ERC20Facet = await ethers.getContractFactory("contracts/facets/ERC20Facet.sol:ERC20Facet");
   const erc20Facet = await ERC20Facet.deploy();
   await erc20Facet.waitForDeployment();
   const erc20FacetAddress = await erc20Facet.getAddress();
 
   // Deploy ModuleToggleFacet
-  const ModuleToggleFacet = await ethers.getContractFactory("ModuleToggleFacet");
+  const ModuleToggleFacet = await ethers.getContractFactory("contracts/facets/ModuleToggleFacet.sol:ModuleToggleFacet");
   const moduleToggleFacet = await ModuleToggleFacet.deploy();
   await moduleToggleFacet.waitForDeployment();
   const moduleToggleFacetAddress = await moduleToggleFacet.getAddress();
 
   // Deploy BurnOnTransactionFacet (module facet)
-  const BurnOnTransactionFacet = await ethers.getContractFactory("BurnOnTransactionFacet");
+  const BurnOnTransactionFacet = await ethers.getContractFactory("contracts/facets/BurnOnTransactionFacet.sol:BurnOnTransactionFacet");
   const burnOnTransactionFacet = await BurnOnTransactionFacet.deploy();
   await burnOnTransactionFacet.waitForDeployment();
   const burnOnTransactionFacetAddress = await burnOnTransactionFacet.getAddress();
 
-  // (OPTIONAL: Remove OwnershipFacet addition from the fixture)
-  // const OwnershipFacet = await ethers.getContractFactory("OwnershipFacet");
-  // const ownershipFacet = await OwnershipFacet.deploy();
-  // await ownershipFacet.waitForDeployment();
-  // const ownershipFacetAddress = await ownershipFacet.getAddress();
+  // Deploy OwnershipFacet (optional, if needed)
+  const OwnershipFacet = await ethers.getContractFactory("contracts/facets/OwnershipFacet.sol:OwnershipFacet");
+  const ownershipFacet = await OwnershipFacet.deploy();
+  await ownershipFacet.waitForDeployment();
+  const ownershipFacetAddress = await ownershipFacet.getAddress();
 
   // Deploy main Diamond contract using the deployer as owner
   const Diamond = await ethers.getContractFactory("Diamond", deployer);
@@ -65,7 +65,7 @@ async function deployManagedDemocracyFixture() {
       action: FacetCutAction.Add,
       functionSelectors: moduleToggleFacet.interface.fragments
         .filter((f) => f.type === "function")
-        .map((f) => ModuleToggleFacet.interface.getFunction(f.name).selector),
+        .map((f) => moduleToggleFacet.interface.getFunction(f.name).selector),
     }],
     ethers.ZeroAddress, "0x"
   );
@@ -76,19 +76,20 @@ async function deployManagedDemocracyFixture() {
       facetAddress: burnOnTransactionFacetAddress,
       action: FacetCutAction.Add,
       functionSelectors: [
-        BurnOnTransactionFacet.interface.getFunction("initializeBurnModule").selector,
+        burnOnTransactionFacet.interface.getFunction("initializeBurnModule").selector,
       ],
     }],
     ethers.ZeroAddress, "0x"
   );
 
-  // Do not add the OwnershipFacet here so that diamondCut remains provided by DiamondCutFacet.
+  // Optionally, add OwnershipFacet functions if needed (skip if causing issues)
 
   return {
     diamondAddress,
     deployer,
     addr1,
-    burnOnTransactionFacet, // for later use in tests
+    burnOnTransactionFacet, // Return burn facet instance
+    erc20Facet              // Return ERC20Facet instance for reference
   };
 }
 

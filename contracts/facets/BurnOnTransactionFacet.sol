@@ -1,49 +1,51 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "../libraries/TransferLib.sol";
+import "../libraries/BurnOnTransactionLib.sol";
+
 interface IModuleToggleFacet {
     function isModuleEnabled(bytes32 moduleId) external view returns (bool);
 }
 
-interface IERC20Facet {
-    function burn(address from, uint256 amount) external;
-}
-
 contract BurnOnTransactionFacet {
+    // The module identifier used for toggling.
     bytes32 constant MODULE_ID = keccak256("BurnOnTransaction");
-    uint256 public burnPercent;
 
-    event BurnOnTransactionExecuted(address indexed sender, address indexed recipient, uint256 amountSent, uint256 amountBurned);
+    event BurnOnTransactionExecuted(
+        address indexed sender,
+        address indexed recipient,
+        uint256 amountSent,
+        uint256 amountBurned
+    );
 
+    // Initialize the burn module by setting the burn percentage.
     function initializeBurnModule(uint256 _burnPercent) external {
-        require(burnPercent == 0, "Already initialized");
-        burnPercent = _burnPercent;
+        BurnOnTransactionLib.Storage storage s = BurnOnTransactionLib.burnStorage();
+        require(s.burnPercent == 0, "Already initialized");
+        s.burnPercent = _burnPercent;
     }
 
-    // Must exactly match ERC20Facet's transfer signature!
+    // This transfer function must exactly match the ERC20 transfer signature.
     function transfer(address recipient, uint256 amount) public returns (bool) {
+        BurnOnTransactionLib.Storage storage s = BurnOnTransactionLib.burnStorage();
+        uint256 burnPercent = s.burnPercent;
+
         if (isModuleActive()) {
             uint256 burnAmount = (amount * burnPercent) / 10000;
             uint256 transferAmount = amount - burnAmount;
-
-            IERC20Facet(address(this)).burn(msg.sender, burnAmount);
-
-            (bool success, bytes memory data) = address(this).delegatecall(
-                abi.encodeWithSignature("transfer(address,uint256)", recipient, transferAmount)
-            );
-
-            require(success, "Transfer failed after burn");
+            
+            // Burn tokens using the shared library logic.
+            TransferLib._burn(msg.sender, burnAmount);
+            // Transfer remaining tokens.
+            TransferLib._transferTokens(msg.sender, recipient, transferAmount);
 
             emit BurnOnTransactionExecuted(msg.sender, recipient, transferAmount, burnAmount);
-            return abi.decode(data, (bool));
+            return true;
         } else {
-            // Delegatecall to ERC20Facet if inactive
-            (bool success, bytes memory data) = address(this).delegatecall(
-                abi.encodeWithSignature("transfer(address,uint256)", recipient, amount)
-            );
-
-            require(success, "Standard transfer failed");
-            return abi.decode(data, (bool));
+            // Module inactive: perform standard transfer.
+            TransferLib._transferTokens(msg.sender, recipient, amount);
+            return true;
         }
     }
 
