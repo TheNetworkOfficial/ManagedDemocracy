@@ -58,6 +58,24 @@ async function deployManagedDemocracyFixture() {
   const erc20 = await ethers.getContractAt("ERC20Facet", diamondAddress);
   await erc20.initializeERC20("Managed Democracy", "MDEM", ethers.parseUnits("100000000", 18), deployer.address);
 
+  // Deploy DiamondLoupeFacet
+  const DiamondLoupeFacet = await ethers.getContractFactory("contracts/facets/DiamondLoupeFacet.sol:DiamondLoupeFacet");
+  const diamondLoupeFacet = await DiamondLoupeFacet.deploy();
+  await diamondLoupeFacet.waitForDeployment();
+  const diamondLoupeFacetAddress = await diamondLoupeFacet.getAddress();
+
+  // Add DiamondLoupeFacet functions to Diamond
+  await diamondCut.diamondCut(
+    [{
+      facetAddress: diamondLoupeFacetAddress,
+      action: FacetCutAction.Add,
+      functionSelectors: DiamondLoupeFacet.interface.fragments
+        .filter((f) => f.type === "function")
+        .map((f) => DiamondLoupeFacet.interface.getFunction(f.name).selector),
+    }],
+    ethers.ZeroAddress, "0x"
+  );
+
   // Add ModuleToggleFacet functions to Diamond
   await diamondCut.diamondCut(
     [{

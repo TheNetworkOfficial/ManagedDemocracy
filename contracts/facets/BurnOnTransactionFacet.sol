@@ -28,25 +28,21 @@ contract BurnOnTransactionFacet {
 
     // This transfer function must exactly match the ERC20 transfer signature.
     function transfer(address recipient, uint256 amount) public returns (bool) {
-        BurnOnTransactionLib.Storage storage s = BurnOnTransactionLib.burnStorage();
-        uint256 burnPercent = s.burnPercent;
+    BurnOnTransactionLib.Storage storage s = BurnOnTransactionLib.burnStorage();
 
-        if (isModuleActive()) {
-            uint256 burnAmount = (amount * burnPercent) / 10000;
-            uint256 transferAmount = amount - burnAmount;
-            
-            // Burn tokens using the shared library logic.
-            TransferLib._burn(msg.sender, burnAmount);
-            // Transfer remaining tokens.
-            TransferLib._transferTokens(msg.sender, recipient, transferAmount);
+    if (isModuleActive()) {
+        uint256 burnAmount = (amount * s.burnPercent) / 10000;
+        uint256 transferAmount = amount - burnAmount;
 
-            emit BurnOnTransactionExecuted(msg.sender, recipient, transferAmount, burnAmount);
-            return true;
-        } else {
-            // Module inactive: perform standard transfer.
-            TransferLib._transferTokens(msg.sender, recipient, amount);
-            return true;
-        }
+        TransferLib._burn(msg.sender, burnAmount);
+        TransferLib._transferTokens(msg.sender, recipient, transferAmount);
+
+        emit BurnOnTransactionExecuted(msg.sender, recipient, transferAmount, burnAmount);
+        return true;
+    } else {
+        TransferLib._transferTokens(msg.sender, recipient, amount);
+        return true;
+    }
     }
 
     function isModuleActive() internal view returns (bool) {

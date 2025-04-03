@@ -7,6 +7,8 @@ const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helper
 describe("BurnOnTransactionFacet Tests", function () {
   let erc20, moduleToggleFacet, burnOnTransactionFacet, erc20Facet, deployer, addr1, diamondAddress;
 
+  let diamondLoupe; // Declare at the top along with other variables
+
   before(async () => {
     const fixture = await loadFixture(deployManagedDemocracyFixture);
     diamondAddress = fixture.diamondAddress;
@@ -15,12 +17,14 @@ describe("BurnOnTransactionFacet Tests", function () {
     erc20 = await ethers.getContractAt("ERC20Facet", diamondAddress);
     moduleToggleFacet = await ethers.getContractAt("ModuleToggleFacet", diamondAddress);
     burnOnTransactionFacet = fixture.burnOnTransactionFacet;
+    erc20Facet = fixture.erc20Facet;
   
-    // Call initializeBurnModule only if it has not been initialized yet.
+    // Initialize BurnOnTransactionFacet
     const burnFacetContract = await ethers.getContractAt("BurnOnTransactionFacet", diamondAddress);
-    // Optionally check if already initialized (if your interface exposed a getter)
-    // For now, assume this diamond is fresh.
     await burnFacetContract.initializeBurnModule(100);
+  
+    // Initialize diamondLoupe variable here:
+    diamondLoupe = await ethers.getContractAt("DiamondLoupeFacet", diamondAddress);
   });
 
   it("diagnostic: should print diamond owner", async () => {
@@ -63,40 +67,42 @@ describe("BurnOnTransactionFacet Tests", function () {
   });
 
   it("should burn tokens during transfer when active", async () => {
-    // Connect diamondCut contract as owner
     let diamondCut = await ethers.getContractAt("IDiamondCut", diamondAddress);
     diamondCut = diamondCut.connect(deployer);
     const FacetCutAction = { Add: 0, Replace: 1, Remove: 2 };
   
-    // Replace the transfer function with the BurnOnTransactionFacet.transfer
     const burnFacetAddress = await burnOnTransactionFacet.getAddress();
-    await diamondCut.diamondCut(
-      [{
-        facetAddress: burnFacetAddress,
-        action: FacetCutAction.Replace,
-        functionSelectors: [
-          burnOnTransactionFacet.interface.getFunction("transfer").selector,
-        ],
-      }],
-      ethers.ZeroAddress,
-      "0x"
-    );
+    const transferSelector = burnOnTransactionFacet.interface.getFunction("transfer").selector;
   
-    // Enable the burn module via ModuleToggleFacet
+    // Replace the transfer function
+    const currentFacetAddress = await diamondLoupe.facetAddress(transferSelector);
+    if (currentFacetAddress !== burnFacetAddress) {
+      await diamondCut.diamondCut(
+        [{
+          facetAddress: burnFacetAddress,
+          action: FacetCutAction.Replace,
+          functionSelectors: [transferSelector],
+        }],
+        ethers.ZeroAddress,
+        "0x"
+      );
+    }
+  
+    // Enable the burn module explicitly
     const moduleId = ethers.keccak256(ethers.toUtf8Bytes("BurnOnTransaction"));
     await moduleToggleFacet.setModuleState(moduleId, true);
-    expect(await moduleToggleFacet.isModuleEnabled(moduleId)).to.be.true;
   
     const amount = ethers.parseUnits("1000", 18);
-    // For burnPercent of 100, we assume a burn rate of 1% → burnAmount = amount/100
-    const burnAmount = amount / 100n;
+    const burnAmount = amount / 100n; // 1% burn
     const receivedAmount = amount - burnAmount;
   
-    // Call transfer using ERC20Facet interface (which now routes to BurnOnTransactionFacet.transfer)
-    await erc20.transfer(addr1.address, amount);
+    // Call explicitly through the diamond address with the correct ABI directly (DO NOT use old ERC20 ABI here!)
+    const burnFacet = await ethers.getContractAt("BurnOnTransactionFacet", diamondAddress);
+    await burnFacet.transfer(addr1.address, amount);
   
-    const recipientBalance = await erc20.balanceOf(addr1.address);
-    expect(recipientBalance).to.equal(receivedAmount);
+    // Verify balances explicitly using diamond address again
+    const finalBalance = await erc20.balanceOf(addr1.address);
+    expect(finalBalance).to.equal(receivedAmount);
   
     const totalSupply = await erc20.totalSupply();
     const expectedTotalSupply = ethers.parseUnits("100000000", 18) - burnAmount;

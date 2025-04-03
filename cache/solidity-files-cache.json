@@ -1098,8 +1098,8 @@
       ]
     },
     "E:\\Programming\\ManagedDemocracy\\contracts\\facets\\BurnOnTransactionFacet.sol": {
-      "lastModificationDate": 1742827313373,
-      "contentHash": "49fb130cfb455a92c773cea0e9805238",
+      "lastModificationDate": 1742834280609,
+      "contentHash": "03538b6a6e847b24a88998d618dd8bc2",
       "sourceName": "contracts/facets/BurnOnTransactionFacet.sol",
       "solcConfig": {
         "version": "0.8.28",
