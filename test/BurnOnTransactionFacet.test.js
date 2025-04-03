@@ -66,6 +66,24 @@ describe("BurnOnTransactionFacet Tests", function () {
     expect(currentFacetAddress).to.equal(burnFacetAddress, "Default transfer function is still enabled!");
   });
 
+  it("should disable base transfer when burn module is active", async function () {
+    const burnModuleId = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("BurnOnTransaction"));
+    // Enable the burn module via the ModuleToggleFacet
+    await moduleToggleFacet.setModuleState(burnModuleId, true);
+
+    // Verify that calling the default transfer function reverts.
+    await expect(erc20Facet.transfer(recipient.address, 1000))
+        .to.be.revertedWith("Default transfer disabled when burn module is active");
+
+    // Now simulate a transfer using the BurnOnTransactionFacet (which should perform the burn and transfer)
+    // (Assuming you have initialized the burn module in BurnOnTransactionFacet with the desired burn percentage)
+    await burnOnTransactionFacet.initializeBurnModule(1000); // e.g., 10% if your math divides by 10000
+    const tx = await burnOnTransactionFacet.transfer(recipient.address, 1000);
+    await tx.wait();
+
+    // Further assertions can verify that the recipient got the correct net amount and tokens were burned.
+  });
+
   it("should burn tokens during transfer when active", async () => {
     let diamondCut = await ethers.getContractAt("IDiamondCut", diamondAddress);
     diamondCut = diamondCut.connect(deployer);
