@@ -1,5 +1,6 @@
 // fixtures.js
 const { ethers } = require("hardhat");
+const { keccak256, toUtf8Bytes } = require('ethers');
 
 async function deployManagedDemocracyFixture() {
   const [deployer, addr1] = await ethers.getSigners();
