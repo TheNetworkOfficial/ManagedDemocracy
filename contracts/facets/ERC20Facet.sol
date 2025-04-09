@@ -3,11 +3,6 @@ pragma solidity ^0.8.24;
 
 import "../libraries/TransferLib.sol";
 
-// Add a minimal interface to check module toggling status
-interface IModuleToggleFacet {
-    function isModuleEnabled(bytes32 module) external view returns (bool);
-}
-
 contract ERC20Facet {
     bool private initialized;
     string private _nameERC20;
@@ -48,12 +43,8 @@ contract ERC20Facet {
         return TransferLib.tokenStorage().balances[account];
     }
 
-    // Modified transfer function: if the burn module is active, revert so that
-    // the BurnOnTransactionFacet.transfer is the only active logic.
+    // Standard transfer calls the library's transfer logic.
     function transfer(address recipient, uint256 amount) public returns (bool) {
-        bytes32 burnModuleId = keccak256("BurnOnTransaction");
-        bool burnActive = IModuleToggleFacet(address(this)).isModuleEnabled(burnModuleId);
-        require(!burnActive, "Default transfer disabled when burn module is active");
         TransferLib._transferTokens(msg.sender, recipient, amount);
         return true;
     }

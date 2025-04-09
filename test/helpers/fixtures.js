@@ -1,3 +1,4 @@
+// fixtures.js
 const { ethers } = require("hardhat");
 
 async function deployManagedDemocracyFixture() {
@@ -9,7 +10,7 @@ async function deployManagedDemocracyFixture() {
   await diamondCutFacet.waitForDeployment();
   const diamondCutFacetAddress = await diamondCutFacet.getAddress();
 
-  // Deploy ERC20Facet (using fully qualified name)
+  // Deploy ERC20Facet
   const ERC20Facet = await ethers.getContractFactory("contracts/facets/ERC20Facet.sol:ERC20Facet");
   const erc20Facet = await ERC20Facet.deploy();
   await erc20Facet.waitForDeployment();
@@ -21,19 +22,19 @@ async function deployManagedDemocracyFixture() {
   await moduleToggleFacet.waitForDeployment();
   const moduleToggleFacetAddress = await moduleToggleFacet.getAddress();
 
-  // Deploy BurnOnTransactionFacet (module facet)
+  // Deploy BurnOnTransactionFacet
   const BurnOnTransactionFacet = await ethers.getContractFactory("contracts/facets/BurnOnTransactionFacet.sol:BurnOnTransactionFacet");
   const burnOnTransactionFacet = await BurnOnTransactionFacet.deploy();
   await burnOnTransactionFacet.waitForDeployment();
   const burnOnTransactionFacetAddress = await burnOnTransactionFacet.getAddress();
 
-  // Deploy OwnershipFacet (optional, if needed)
+  // (Optional) Deploy OwnershipFacet if needed...
   const OwnershipFacet = await ethers.getContractFactory("contracts/facets/OwnershipFacet.sol:OwnershipFacet");
   const ownershipFacet = await OwnershipFacet.deploy();
   await ownershipFacet.waitForDeployment();
   const ownershipFacetAddress = await ownershipFacet.getAddress();
 
-  // Deploy main Diamond contract using the deployer as owner
+  // Deploy main Diamond contract
   const Diamond = await ethers.getContractFactory("Diamond", deployer);
   const diamond = await Diamond.deploy(deployer.address, diamondCutFacetAddress);
   await diamond.waitForDeployment();
@@ -42,7 +43,7 @@ async function deployManagedDemocracyFixture() {
   const diamondCut = await ethers.getContractAt("IDiamondCut", diamondAddress);
   const FacetCutAction = { Add: 0, Replace: 1, Remove: 2 };
 
-  // Add ERC20Facet functions to Diamond
+  // Add ERC20Facet to Diamond
   await diamondCut.diamondCut(
     [{
       facetAddress: erc20FacetAddress,
@@ -58,13 +59,12 @@ async function deployManagedDemocracyFixture() {
   const erc20 = await ethers.getContractAt("ERC20Facet", diamondAddress);
   await erc20.initializeERC20("Managed Democracy", "MDEM", ethers.parseUnits("100000000", 18), deployer.address);
 
-  // Deploy DiamondLoupeFacet
+  // Deploy DiamondLoupeFacet and add it to Diamond
   const DiamondLoupeFacet = await ethers.getContractFactory("contracts/facets/DiamondLoupeFacet.sol:DiamondLoupeFacet");
   const diamondLoupeFacet = await DiamondLoupeFacet.deploy();
   await diamondLoupeFacet.waitForDeployment();
   const diamondLoupeFacetAddress = await diamondLoupeFacet.getAddress();
 
-  // Add DiamondLoupeFacet functions to Diamond
   await diamondCut.diamondCut(
     [{
       facetAddress: diamondLoupeFacetAddress,
@@ -76,19 +76,19 @@ async function deployManagedDemocracyFixture() {
     ethers.ZeroAddress, "0x"
   );
 
-  // Add ModuleToggleFacet functions to Diamond
+  // Add ModuleToggleFacet to Diamond
   await diamondCut.diamondCut(
     [{
       facetAddress: moduleToggleFacetAddress,
       action: FacetCutAction.Add,
-      functionSelectors: moduleToggleFacet.interface.fragments
+      functionSelectors: ModuleToggleFacet.interface.fragments
         .filter((f) => f.type === "function")
-        .map((f) => moduleToggleFacet.interface.getFunction(f.name).selector),
+        .map((f) => ModuleToggleFacet.interface.getFunction(f.name).selector),
     }],
     ethers.ZeroAddress, "0x"
   );
 
-  // Attach only the initializeBurnModule function from BurnOnTransactionFacet
+  // Add only the initializeBurnModule function from BurnOnTransactionFacet to Diamond
   await diamondCut.diamondCut(
     [{
       facetAddress: burnOnTransactionFacetAddress,
@@ -100,14 +100,25 @@ async function deployManagedDemocracyFixture() {
     ethers.ZeroAddress, "0x"
   );
 
-  // Optionally, add OwnershipFacet functions if needed (skip if causing issues)
+  // Configure the BurnOnTransaction module via ModuleToggleFacet.
+  const moduleToggle = await ethers.getContractAt("ModuleToggleFacet", diamondAddress);
+  const burnModuleId = keccak256(toUtf8Bytes("BurnOnTransaction"));
+  // Set configuration: when active use burnOnTransactionFacet; when inactive, use erc20Facet.
+  // Overlapping function: transfer(address,uint256)
+  await moduleToggle.setModuleConfiguration(
+    burnModuleId,
+    burnOnTransactionFacetAddress,
+    erc20FacetAddress,
+    [burnOnTransactionFacet.interface.getFunction("transfer").selector]
+  );
 
   return {
     diamondAddress,
     deployer,
     addr1,
-    burnOnTransactionFacet, // Return burn facet instance
-    erc20Facet              // Return ERC20Facet instance for reference
+    burnOnTransactionFacet, // instance of BurnOnTransactionFacet (as deployed separately)
+    erc20Facet,             // instance of ERC20Facet
+    moduleToggleFacet: moduleToggle, // instance of ModuleToggleFacet on diamond
   };
 }
 

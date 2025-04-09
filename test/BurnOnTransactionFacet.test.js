@@ -1,13 +1,14 @@
-// BurnOnTransactionFacet.test.js
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { keccak256, toUtf8Bytes } = require("ethers");
 const { deployManagedDemocracyFixture } = require("./helpers/fixtures");
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
-describe("BurnOnTransactionFacet Tests", function () {
-  let erc20, moduleToggleFacet, burnOnTransactionFacet, erc20Facet, deployer, addr1, diamondAddress;
+const burnModuleId = keccak256(toUtf8Bytes("BurnOnTransaction"));
 
-  let diamondLoupe; // Declare at the top along with other variables
+describe("BurnOnTransactionFacet Tests", function () {
+  let erc20, moduleToggleFacet, burnOnTransactionFacet, erc20Facet, deployer, addr1, diamondAddress, diamondLoupe;
+  const burnModuleId = keccak256(toUtf8Bytes("BurnOnTransaction"));
 
   before(async () => {
     const fixture = await loadFixture(deployManagedDemocracyFixture);
@@ -18,13 +19,11 @@ describe("BurnOnTransactionFacet Tests", function () {
     moduleToggleFacet = await ethers.getContractAt("ModuleToggleFacet", diamondAddress);
     burnOnTransactionFacet = fixture.burnOnTransactionFacet;
     erc20Facet = fixture.erc20Facet;
-  
-    // Initialize BurnOnTransactionFacet
+    diamondLoupe = await ethers.getContractAt("DiamondLoupeFacet", diamondAddress);
+
+    // Initialize BurnOnTransactionFacet's burn percentage (e.g. 100 means 1% burn if divided by 10000)
     const burnFacetContract = await ethers.getContractAt("BurnOnTransactionFacet", diamondAddress);
     await burnFacetContract.initializeBurnModule(100);
-  
-    // Initialize diamondLoupe variable here:
-    diamondLoupe = await ethers.getContractAt("DiamondLoupeFacet", diamondAddress);
   });
 
   it("diagnostic: should print diamond owner", async () => {
@@ -33,103 +32,53 @@ describe("BurnOnTransactionFacet Tests", function () {
 
   it("should transfer without burn when module inactive", async () => {
     const amount = ethers.parseUnits("1000", 18);
+    // With module inactive, ERC20Facet.transfer is active.
     await erc20.transfer(addr1.address, amount);
     expect(await erc20.balanceOf(addr1.address)).to.equal(amount);
   });
 
-  it("should enable BurnOnTransaction module and disable default transfer", async () => {
-    // Enable module via ModuleToggleFacet
-    const moduleId = ethers.keccak256(ethers.toUtf8Bytes("BurnOnTransaction"));
-    await moduleToggleFacet.setModuleState(moduleId, true);
-    expect(await moduleToggleFacet.isModuleEnabled(moduleId)).to.be.true;
+  it("should enable BurnOnTransaction module and replace default transfer", async () => {
+    // Enable the module via ModuleToggleFacet; this will trigger the diamond cut automatically.
+    await moduleToggleFacet.setModuleState(burnModuleId, true);
+    expect(await moduleToggleFacet.isModuleEnabled(burnModuleId)).to.be.true;
 
-    // Perform diamondCut Replace: swap ERC20Facet.transfer for BurnOnTransactionFacet.transfer
-    let diamondCut = await ethers.getContractAt("IDiamondCut", diamondAddress);
-    diamondCut = diamondCut.connect(deployer);
-    const FacetCutAction = { Add: 0, Replace: 1, Remove: 2 };
-    const burnFacetAddress = await burnOnTransactionFacet.getAddress();
-    await diamondCut.diamondCut(
-      [{
-        facetAddress: burnFacetAddress,
-        action: FacetCutAction.Replace,
-        functionSelectors: [
-          burnOnTransactionFacet.interface.getFunction("transfer").selector,
-        ],
-      }],
-      ethers.ZeroAddress,
-      "0x"
-    );
-
-    // Now check that the diamond routes transfer calls to BurnOnTransactionFacet
+    // Check that the diamond routes the transfer selector to the burn facet.
     const transferSelector = burnOnTransactionFacet.interface.getFunction("transfer").selector;
     const currentFacetAddress = await diamondLoupe.facetAddress(transferSelector);
-    expect(currentFacetAddress).to.equal(burnFacetAddress, "Default transfer function is still enabled!");
+    expect(currentFacetAddress).to.equal(burnOnTransactionFacet.address, "Burn facet not active");
   });
 
-  it("should disable base transfer when burn module is active", async function () {
-    const burnModuleId = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("BurnOnTransaction"));
-    // Enable the burn module via the ModuleToggleFacet
+  it("should disable BurnOnTransaction module and revert to base transfer", async () => {
+    // Disable the module.
+    await moduleToggleFacet.setModuleState(burnModuleId, false);
+    expect(await moduleToggleFacet.isModuleEnabled(burnModuleId)).to.be.false;
+
+    // Now the transfer selector should route to the ERC20Facet.
+    const transferSelector = burnOnTransactionFacet.interface.getFunction("transfer").selector;
+    const currentFacetAddress = await diamondLoupe.facetAddress(transferSelector);
+    expect(currentFacetAddress).to.equal(erc20Facet.address, "Base facet not restored");
+  });
+
+  it("should burn tokens during transfer when module active", async () => {
+    // Enable the module.
     await moduleToggleFacet.setModuleState(burnModuleId, true);
 
-    // Verify that calling the default transfer function reverts.
-    await expect(erc20Facet.transfer(recipient.address, 1000))
-        .to.be.revertedWith("Default transfer disabled when burn module is active");
-
-    // Now simulate a transfer using the BurnOnTransactionFacet (which should perform the burn and transfer)
-    // (Assuming you have initialized the burn module in BurnOnTransactionFacet with the desired burn percentage)
-    await burnOnTransactionFacet.initializeBurnModule(1000); // e.g., 10% if your math divides by 10000
-    const tx = await burnOnTransactionFacet.transfer(recipient.address, 1000);
-    await tx.wait();
-
-    // Further assertions can verify that the recipient got the correct net amount and tokens were burned.
-  });
-
-  it("should burn tokens during transfer when active", async () => {
-    let diamondCut = await ethers.getContractAt("IDiamondCut", diamondAddress);
-    diamondCut = diamondCut.connect(deployer);
-    const FacetCutAction = { Add: 0, Replace: 1, Remove: 2 };
-  
-    const burnFacetAddress = await burnOnTransactionFacet.getAddress();
-    const transferSelector = burnOnTransactionFacet.interface.getFunction("transfer").selector;
-  
-    // Replace the transfer function
-    const currentFacetAddress = await diamondLoupe.facetAddress(transferSelector);
-    if (currentFacetAddress !== burnFacetAddress) {
-      await diamondCut.diamondCut(
-        [{
-          facetAddress: burnFacetAddress,
-          action: FacetCutAction.Replace,
-          functionSelectors: [transferSelector],
-        }],
-        ethers.ZeroAddress,
-        "0x"
-      );
-    }
-  
-    // Enable the burn module explicitly
-    const moduleId = ethers.keccak256(ethers.toUtf8Bytes("BurnOnTransaction"));
-    await moduleToggleFacet.setModuleState(moduleId, true);
-  
     const amount = ethers.parseUnits("1000", 18);
-    const burnAmount = amount / 100n; // 1% burn
+    // Assuming initializeBurnModule(100) makes burnAmount = amount / 100 (i.e. 1% burn)
+    const burnAmount = amount / 100n;
     const receivedAmount = amount - burnAmount;
-  
-    // Call explicitly through the diamond address with the correct ABI directly (DO NOT use old ERC20 ABI here!)
+
+    // Call transfer via the diamond (now routed to BurnOnTransactionFacet.transfer)
     const burnFacet = await ethers.getContractAt("BurnOnTransactionFacet", diamondAddress);
     await burnFacet.transfer(addr1.address, amount);
-  
-    // Verify balances explicitly using diamond address again
+
+    // Verify that the recipient's balance is as expected.
     const finalBalance = await erc20.balanceOf(addr1.address);
     expect(finalBalance).to.equal(receivedAmount);
-  
+
+    // Verify that the total supply decreased by the burn amount.
     const totalSupply = await erc20.totalSupply();
     const expectedTotalSupply = ethers.parseUnits("100000000", 18) - burnAmount;
     expect(totalSupply).to.equal(expectedTotalSupply);
-  });
-
-  it("should disable BurnOnTransaction module", async () => {
-    const moduleId = ethers.keccak256(ethers.toUtf8Bytes("BurnOnTransaction"));
-    await moduleToggleFacet.setModuleState(moduleId, false);
-    expect(await moduleToggleFacet.isModuleEnabled(moduleId)).to.be.false;
   });
 });

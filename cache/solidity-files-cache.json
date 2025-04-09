@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "E:\\Programming\\ManagedDemocracy\\contracts\\facets\\ERC20Facet.sol": {
-      "lastModificationDate": 1743711341689,
-      "contentHash": "c376bbd68d86cc2aa31a5320f203616f",
+      "lastModificationDate": 1743712821597,
+      "contentHash": "69d9c31bc9996337c5e740e780117338",
       "sourceName": "contracts/facets/ERC20Facet.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -36,8 +36,7 @@
         "^0.8.24"
       ],
       "artifacts": [
-        "ERC20Facet",
-        "IModuleToggleFacet"
+        "ERC20Facet"
       ]
     },
     "E:\\Programming\\ManagedDemocracy\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\ERC20.sol": {
@@ -1061,8 +1060,8 @@
       ]
     },
     "E:\\Programming\\ManagedDemocracy\\contracts\\facets\\ModuleToggleFacet.sol": {
-      "lastModificationDate": 1742396315598,
-      "contentHash": "ccc3c16fa70b2fb8f5db02b6a521837c",
+      "lastModificationDate": 1743715774300,
+      "contentHash": "fe0303c6867af580ad3042654580a48a",
       "sourceName": "contracts/facets/ModuleToggleFacet.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -1089,7 +1088,8 @@
         }
       },
       "imports": [
-        "../libraries/LibDiamond.sol"
+        "../libraries/LibDiamond.sol",
+        "../interfaces/IDiamondCut.sol"
       ],
       "versionPragmas": [
         "^0.8.24"
@@ -1099,8 +1099,8 @@
       ]
     },
     "E:\\Programming\\ManagedDemocracy\\contracts\\facets\\BurnOnTransactionFacet.sol": {
-      "lastModificationDate": 1742834280609,
-      "contentHash": "03538b6a6e847b24a88998d618dd8bc2",
+      "lastModificationDate": 1743714453848,
+      "contentHash": "98ffdbbc38db9394ba2fc142daf9a17c",
       "sourceName": "contracts/facets/BurnOnTransactionFacet.sol",
       "solcConfig": {
         "version": "0.8.28",
