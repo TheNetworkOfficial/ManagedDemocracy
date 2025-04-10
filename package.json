@@ -14,7 +14,8 @@
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "dotenv": "^16.4.7",
     "ethers": "^6.13.5",
-    "hardhat": "^2.22.19"
+    "hardhat": "^2.22.19",
+    "snarkjs": "^0.7.5"
   },
   "dependencies": {
     "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
