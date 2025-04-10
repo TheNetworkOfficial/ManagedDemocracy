@@ -89,7 +89,6 @@ async function deployManagedDemocracyFixture() {
     ethers.ZeroAddress, "0x"
   );
 
-  // Add only the initializeBurnModule function from BurnOnTransactionFacet to Diamond
   await diamondCut.diamondCut(
     [{
       facetAddress: burnOnTransactionFacetAddress,
@@ -99,7 +98,7 @@ async function deployManagedDemocracyFixture() {
       ],
     }],
     ethers.ZeroAddress, "0x"
-  );
+  );  
 
   // Configure the BurnOnTransaction module via ModuleToggleFacet.
   const moduleToggle = await ethers.getContractAt("ModuleToggleFacet", diamondAddress);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "../libraries/LibDiamond.sol";
 import "../libraries/TransferLib.sol";
 import "../libraries/BurnOnTransactionLib.sol";
 
@@ -41,6 +42,13 @@ contract BurnOnTransactionFacet {
         return true;
     }
 
+    function updateBurnModule(uint256 newBurnPercent) external {
+        LibDiamond.enforceIsContractOwner();
+        BurnOnTransactionLib.Storage storage s = BurnOnTransactionLib.burnStorage();
+        require(s.burnPercent != 0, "Module not initialized");
+        require(newBurnPercent <= 10000, "Invalid burn rate");
+        s.burnPercent = newBurnPercent;
+    }
 
     function isModuleActive() internal view returns (bool) {
         return IModuleToggleFacet(address(this)).isModuleEnabled(MODULE_ID);

@@ -22,6 +22,7 @@ library TransferLib {
     /// @notice Internal transfer function to move tokens between addresses.
     function _transferTokens(address sender, address recipient, uint256 amount) internal {
         TokenStorage storage ts = tokenStorage();
+        require(recipient != address(0), "ERC20: transfer to the zero address");
         require(ts.balances[sender] >= amount, "Insufficient balance");
         ts.balances[sender] -= amount;
         ts.balances[recipient] += amount;

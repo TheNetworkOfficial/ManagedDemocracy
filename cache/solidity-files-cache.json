@@ -1099,8 +1099,8 @@
       ]
     },
     "E:\\Programming\\ManagedDemocracy\\contracts\\facets\\BurnOnTransactionFacet.sol": {
-      "lastModificationDate": 1743714453848,
-      "contentHash": "98ffdbbc38db9394ba2fc142daf9a17c",
+      "lastModificationDate": 1744294090770,
+      "contentHash": "d3096a6f75d37d0638b04f5d52a151b5",
       "sourceName": "contracts/facets/BurnOnTransactionFacet.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -1127,6 +1127,7 @@
         }
       },
       "imports": [
+        "../libraries/LibDiamond.sol",
         "../libraries/TransferLib.sol",
         "../libraries/BurnOnTransactionLib.sol"
       ],
@@ -1139,8 +1140,8 @@
       ]
     },
     "E:\\Programming\\ManagedDemocracy\\contracts\\libraries\\TransferLib.sol": {
-      "lastModificationDate": 1742577004798,
-      "contentHash": "e58b8a00462dc75f5aa7ccd7a10786b7",
+      "lastModificationDate": 1744294153451,
+      "contentHash": "8bf7a0ec9b6f1e247aefc2fed697907c",
       "sourceName": "contracts/libraries/TransferLib.sol",
       "solcConfig": {
         "version": "0.8.28",
